@@ -222,9 +222,12 @@ class Smooth(ChronoGui):
                     line.remove()
         if self.scatter_points is not None:
             self.scatter_points.remove()
-        spline_step=int(len(self.time)//num_spline_points)
-        reduced_time=self.time[::spline_step]
-        reduced_current=self.current[::spline_step]
+        excluded_time=np.where(self.time>first_injection)
+        time=self.time[excluded_time]
+        current=self.current[excluded_time]
+        spline_step=int(len(time)//num_spline_points)
+        reduced_time=time[::spline_step]
+        reduced_current=current[::spline_step]
         spline_interpolant=CubicSpline(reduced_time, reduced_current)
         second_derivative=spline_interpolant(reduced_time,2)
         min_values=sorted(enumerate(second_derivative), key=lambda x:x[1])
@@ -237,6 +240,7 @@ class Smooth(ChronoGui):
             time_pos=reduced_time[min_values[i][0]]
             window=[time_pos-pulse_interval, time_pos+pulse_interval]
             new_peak=True
+
             if time_pos<first_injection:
                 continue
             for j in range(0, len(time_array)):
@@ -245,7 +249,6 @@ class Smooth(ChronoGui):
                     break
             if new_peak==True:
                 time_array.append(time_pos)
-                
         self.time_chunks=np.zeros((len(time_array), 2))
         self.mean_value=np.zeros(len(time_array))
         plot_colours=self.colours*(int(len(time_array)//len(self.colours))+1)
